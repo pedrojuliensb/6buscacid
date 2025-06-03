@@ -1,0 +1,122 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BuscaCid</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f0f4f8;
+      margin: 0; padding: 40px;
+      color: #333;
+    }
+    .container {
+      max-width: 750px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      text-align: center;
+    }
+    h1 {
+      color: #0070f3;
+      margin-bottom: 20px;
+    }
+    input {
+      width: 85%;
+      padding: 14px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .result {
+      margin-top: 30px;
+      text-align: left;
+    }
+    .item {
+      background-color: #f9f9f9;
+      padding: 12px 15px;
+      margin-bottom: 10px;
+      border-left: 4px solid #0070f3;
+      border-radius: 5px;
+    }
+    .cid-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cid-header strong {
+      font-size: 17px;
+    }
+    .cid-header button {
+      background: none;
+      border: none;
+      font-size: 17px;
+      cursor: pointer;
+      color: #0070f3;
+    }
+    .cid-header button:hover {
+      color: #0055aa;
+    }
+    .item em {
+      font-size: 13px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>BuscaCid</h1>
+    <input type="text" id="search" placeholder="Digite um código ou termo (ex: hipert, j45.1, asma)" oninput="buscar()" onkeydown="if(event.key==='Enter') buscar()" />
+    <div class="result" id="result"></div>
+  </div>
+  <script src="data.js"></script>
+  <script>
+    function normalizar(texto) {
+      return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ç/g, "c").replace(/\./g, "").toLowerCase();
+    }
+    function formatarCID(cod) {
+      if (cod.length === 4) {
+        return cod.slice(0, 3) + '.' + cod.slice(3);
+      }
+      return cod;
+    }
+    function copiarTexto(texto) {
+      navigator.clipboard.writeText(texto).then(() => {
+        alert('Código copiado: ' + texto);
+      });
+    }
+    function buscar() {
+      const termo = normalizar(document.getElementById('search').value.trim());
+      const palavras = termo.split(/\s+/);
+      const resultados = data.filter(item => {
+        const campos = [
+          normalizar(item.CID),
+          normalizar(item.DESC_SUBCATEGORIA),
+          normalizar(item.DESC_CATEGORIA),
+          normalizar(item.DESC_GRUPO),
+          normalizar(item.DESC_CAPITULO)
+        ].join(' ');
+        return palavras.every(palavra => new RegExp(`\\b${palavra}`, 'i').test(campos));
+      });
+      const div = document.getElementById('result');
+      div.innerHTML = resultados.length ? resultados.map(r => {
+        const cidFormatado = formatarCID(r.CID);
+        return `
+        <div class="item">
+          <div class="cid-header">
+            <strong>${cidFormatado}</strong>
+            <button onclick="copiarTexto('${cidFormatado}')" title="Copiar CID">📋</button>
+          </div>
+          ${r.DESC_SUBCATEGORIA}<br/>
+          <em>${r.DESC_CATEGORIA} / ${r.DESC_GRUPO} / ${r.DESC_CAPITULO}</em>
+        </div>`;
+      }).join('') : "<p>Nenhum resultado encontrado.</p>";
+    }
+  </script>
+</body>
+</html>
